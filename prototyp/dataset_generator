@@ -1,0 +1,244 @@
+import pandas as pd
+import numpy as np
+import random
+from datetime import datetime, timedelta
+
+# Set a random seed for reproducibility
+random.seed(42)
+
+def random_date(start_date, end_date):
+    delta = end_date - start_date
+    return start_date + timedelta(days=random.randint(0, delta.days))
+
+def get_iban(sender_recipient):
+    # Check if the sender/recipient already has an IBAN, if not create one
+    if sender_recipient in ibans:
+        return ibans[sender_recipient]
+    else:
+        iban = f"DE{random.randint(10**18, 10**19-1)}"
+        ibans[sender_recipient] = iban
+        return iban
+
+def random_value_date(date):
+    # Sometimes add a day to the value date
+    if random.random() > 0.9:
+        return date + timedelta(days=1)
+    else:
+        return date
+
+def random_recipient_sender():
+    return random.choice(["Crescent Technologies","Circuit Innovations","Cobalt Solutions","Cosmos Enterprises","Crystal Ventures",
+                          "James Smith", "Olivia Johnson", "Liam Brown", "Tom Williams", "Jackson Jones", "Ava Davis", "Mason Miller", "Isabella Wilson", "Ethan Moore", "Charlotte Taylor",
+                          "Sierra Industries", "Silverstone Solutions", "Synergy Technologies", "Summit Enterprises", "Sapphire Ventures",
+                          "Federal Tax Authority", "Federal Revenue Service",
+                        ])
+
+def random_recipient_sender_test():
+    return random.choice(["Cyberdyne Systems", "Cybertronics", "Cyberspace Solutions", "Cygnus Enterprises", "Cylance Innovations",
+                          "Andrew Wallace", "Emma Rogers", "Noah Peterson", "Lily Adams", "Benjamin Hayes", "Olivia Martin", "Henry Dawson", "Grace Elliott", "Daniel Vaughn", "Chloe Norton",
+                          "Solstice Dynamics","Stellar Innovations","Stratosphere Systems","Sentinel Technologies","Sovereign Solutions",
+                          "Federal Fiscal Office","Federal Tax Administration"
+                        ])
+
+
+def random_reference(recipient_sender):
+    # if the recipient/sender starts with "C" it is a customer
+    if recipient_sender.startswith('C'):
+        return f"INV{random.randint(1000, 9999)}"
+    
+    # if the recipient/sender starts with "S" it is a supplier
+    if recipient_sender.startswith('S'):
+        return f"PO{random.randint(1000, 9999)}"
+    
+    # if the recipient/sender starts with "F" it is a Tax Authority
+    if recipient_sender.startswith('F'):
+        return f"TAX{random.randint(1000, 9999)}"
+    
+    else:
+        return f"REF{random.randint(1000, 9999)}"
+
+
+def random_amount(recipient_sender):
+    # if the recipient/sender starts with "C" it is a customer
+    if recipient_sender.startswith('C'):
+        return round(random.uniform(10, 15000), 2)
+    
+    # if the recipient/sender starts with "S" it is a supplier
+    if recipient_sender.startswith('S'):
+        return round(random.uniform(-10000, -10), 2)
+    
+    # if the recipient/sender starts with "F" it is a Tax Authority
+    if recipient_sender.startswith('F'):
+        return round(random.uniform(-5000, -100), 2)
+
+    return round(random.uniform(-1000, 1000), 2)
+
+
+def random_transaction_type(recipient_sender):
+    # if the recipient/sender starts with "C" it is a customer
+    if recipient_sender.startswith('C'):
+        return random.choice(['Transfer','Payment'])
+    
+    # if the recipient/sender starts with "S" it is a supplier
+    if recipient_sender.startswith('S'):
+        return random.choice(['Transfer','Withdrawal', 'Payment'])
+    
+    # if the recipient/sender starts with "F" it is a Tax Authority
+    if recipient_sender.startswith('F'):
+        return random.choice(['Transfer'])
+    
+    return random.choice(['Transfer', 'Deposit', 'Withdrawal', 'Payment'])
+
+
+
+# categories for the transactions
+categories = [
+    'Revenue',
+    'Cost of Goods Sold',
+    'Administrative Expenses',
+    'Marketing',
+    'Research and Development',
+    'Interest Expense',
+    'Taxes'
+]
+
+
+def set_category(transaction_type):
+    if transaction_type == 'Deposit':
+        return random.choice(['Revenue'])
+
+    if transaction_type == 'Withdrawal':
+        return random.choice(['Cost of Goods Sold', 'Administrative Expenses', 'Marketing', 'Research and Development', 'Interest Expense', 'Taxes'])
+    
+    if transaction_type == 'Payment':
+        return random.choice(['Revenue'])
+    
+    if transaction_type == 'Fee':
+        return random.choice(['Administrative Expenses','Interest Expense', 'Taxes'])
+    
+    if transaction_type == 'Transfer':
+        return random.choice(['Revenue', 'Cost of Goods Sold', 'Administrative Expenses', 'Marketing', 'Research and Development', 'Interest Expense', 'Taxes'])
+    
+    return random.choice(categories)
+
+
+# Generate random data
+num_samples = 1000
+
+# random start balance
+start_balance = round(random.uniform(1000, 1000), 0)
+
+ibans = {}
+data = []
+start_date = datetime(2024, 1, 1)
+end_date = datetime(2025, 1, 1)
+
+def add_datapoint(start_date, end_date):
+    date = random_date(start_date, end_date)
+    value_date = random_value_date(date)
+    recipient_sender = random_recipient_sender()
+    iban = get_iban(recipient_sender)
+    reference = random_reference(recipient_sender)
+    amount = random_amount(recipient_sender)
+    transaction_type = random_transaction_type(recipient_sender)
+    category = set_category(transaction_type)
+    
+    return [
+        date.strftime('%Y-%m-%d'),
+        value_date.strftime('%Y-%m-%d'),
+        reference,
+        recipient_sender,
+        iban,
+        amount,
+        transaction_type,
+        category
+    ]
+
+number_of_classes = {
+    'Revenue': 0,
+    'Cost of Goods Sold': 0,
+    'Administrative Expenses': 0,
+    'Marketing': 0,
+    'Research and Development': 0,
+    'Interest Expense': 0,
+    'Taxes': 0
+}
+max_number_of_classes = num_samples / len(number_of_classes)
+total_number_of_classes = sum(number_of_classes.values())
+
+while sum(number_of_classes.values()) < num_samples:
+    datapoint = add_datapoint(start_date, end_date)
+    if number_of_classes[datapoint[7]] < max_number_of_classes:
+        data.append(datapoint)
+        number_of_classes[datapoint[7]] += 1
+
+
+
+# Create a DataFrame
+columns = ['Date', 'Value_date', 'Reference', 'Recipient/Sender', 'IBAN', 'Amount', 'Transaction_Type', 'Category']
+df = pd.DataFrame(data, columns=columns)
+# Sort the data by date
+df = df.sort_values(by='Date')
+# Reset the index
+df = df.reset_index(drop=True)
+# add column for balance after amount and round to 2 decimal places
+df['Balance'] = df['Amount'].cumsum() + start_balance
+df['Balance'] = df['Balance'].round(2)
+
+df = df[['Date', 'Value_date', 'Reference', 'Recipient/Sender', 'IBAN', 'Amount','Balance', 'Transaction_Type', 'Category']]
+
+# Safe the data to a CSV file
+df.to_csv('datasets/data.csv', index=False, sep=';')
+
+
+
+# Create second dataset with different company names
+
+# Generate random data
+num_samples_test = 50
+
+# random start balance
+start_balance_test = round(random.uniform(1000, 1000), 0)
+ibans_test = {}
+data_test = []
+
+for _ in range(num_samples_test):
+    date_test = random_date(start_date, end_date)
+    value_date_test = random_value_date(date_test)
+    recipient_sender_test = random_recipient_sender_test() # Change for testing of other company names
+    iban_test = get_iban(recipient_sender_test)
+    reference_test = random_reference(recipient_sender_test)
+    amount_test = random_amount(recipient_sender_test)
+    transaction_type_test = random_transaction_type(recipient_sender_test)
+    category_test = set_category(transaction_type_test)
+    
+    data_test.append([
+        date_test.strftime('%Y-%m-%d'),
+        value_date_test.strftime('%Y-%m-%d'),
+        reference_test,
+        recipient_sender_test,
+        iban_test,
+        amount_test,
+        transaction_type_test,
+        category_test
+    ])
+
+# Create a DataFrame
+columns_test = ['Date', 'Value_date', 'Reference', 'Recipient/Sender', 'IBAN', 'Amount', 'Transaction_Type', 'Category']
+df_test = pd.DataFrame(data_test, columns=columns_test)
+# Sort the data by date
+df_test = df_test.sort_values(by='Date')
+# Reset the index
+df_test = df_test.reset_index(drop=True)
+# add column for balance after amount and round to 2 decimal places
+df_test['Balance'] = df_test['Amount'].cumsum() + start_balance_test
+df_test['Balance'] = df_test['Balance'].round(2)
+
+df_test = df_test[['Date', 'Value_date', 'Reference', 'Recipient/Sender', 'IBAN', 'Amount','Balance', 'Transaction_Type', 'Category']]
+
+# Safe the data to a CSV file
+df_test.to_csv('datasets/data_test.csv', index=False, sep=';')
+
+
+
+print('Data saved')
